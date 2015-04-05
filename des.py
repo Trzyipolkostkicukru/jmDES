@@ -125,12 +125,13 @@ def apply_permutation(byte_block, perm):
 
 
 def init(byte_block):
-    apply_permutation(byte_block, IP)
+    return apply_permutation(byte_block, IP)
 
 
 def split_block(byte_block):
+    print "byte_block size:", len(byte_block)
     half = len(byte_block) / 2
-    return [byte_block[:half], byte_block[half + 1:]]
+    return [byte_block[:half], byte_block[half:]]
 
 
 def left_shift(block, step):
@@ -150,8 +151,7 @@ def generate_key(base_key, iter):  # key in byte form
 
 
 def dec2bin(decimal):
-    return [int(d) for d in bin(decimal)[2:]]
-
+    return [int(d) for d in bin(decimal)[2:].zfill(4)]
 
 def bin2dec(bin_list):
     return int(reduce(lambda x, y: str(x) + str(y), bin_list), 2)
@@ -168,24 +168,26 @@ def get_sbox_coordinates(six_byte_chunk):
 def apply_sbox(chunk, sbox):
     row, col = get_sbox_coordinates(chunk)
     number = sbox[row * 16 + col]
+    print "(", row, ",", col, ") ->", number
     return dec2bin(number)
 
 
 def f(right_block, key, iter):
     permuted = apply_permutation(right_block, E)
-    print('permuted', permuted)
+    print "permuted", len(permuted), permuted
     key_48bit = generate_key(key, iter)
-    print('key48', key_48bit)
-    assert len(permuted) != len(key_48bit)
+    print "key48", len(key_48bit), key_48bit
+    assert len(permuted) == len(key_48bit)
 
     xored = [p ^ k for p, k in zip(permuted, key_48bit)]
-    print('xored', xored)
+    print "xored", xored
     six_byte_chunks = [xored[i:i + 6] for i in range(0, len(xored), 6)]
-    print('six_byte_chunks ', six_byte_chunks )
+    print "six_byte_chunks ", six_byte_chunks
     sbox_out = [apply_sbox(chunk, sbox) for chunk, sbox in zip(six_byte_chunks, S)]
-    print('sbox_out', sbox_out )
+    sbox_out = reduce(lambda c1, c2: c1 + c2, sbox_out)
+    print "sbox_out", sbox_out
 
-    return apply_permutation(sbox_out, )
+    return apply_permutation(sbox_out, P)
 
 
 test = [0, 0, 0, 1, 0, 1, 1, 0,
@@ -197,22 +199,26 @@ test = [0, 0, 0, 1, 0, 1, 1, 0,
         1, 0, 0, 0, 1, 0, 1, 0,
         0, 1, 1, 1, 1, 0, 1, 0, ]
 
+key = [1, 1, 1, 1, 0, 1, 1, 0,
+       1, 0, 1, 1, 1, 1, 0, 1,
+       0, 1, 0, 0, 0, 0, 0, 1,
+       1, 0, 0, 1, 0, 1, 0, 0,
+       1, 0, 1, 1, 0, 1, 0, 0,
+       0, 1, 0, 1, 0, 1, 1, 1,
+       1, 0, 0, 0, 1, 0, 1, 0,
+       0, 1, 1, 1, 1, 0, 1, 1, ]
+
 
 def DES(block, key):
     permuted = init(block)
-    print(permuted)
+    print("permuted", permuted)
     split = split_block(permuted)
-    print(split)
+    print("split", len(split[0]), len(split[1]), split)
+    fresult = f(split[1], key, 1)
+    print("fresult", fresult)
 
 
-s = get_sbox_coordinates([1, 1, 1, 1, 1, 1])
-decimal = 19
-print( [int(x) for x in bin(decimal)[2:]])
-
-print(s[0], s[1])
-# print(left_shift([1, 2, 3, 4, 5, 6], 3))
-
-# DES(test, [0, 1, 1, 1, 1, 0])
+DES(test, key)
 
 
 
