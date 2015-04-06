@@ -140,7 +140,6 @@ def init(byte_block):
 
 
 def split_block(byte_block):
-    print "byte_block size:", len(byte_block)
     half = len(byte_block) / 2
     return [byte_block[:half], byte_block[half:]]
 
@@ -155,15 +154,15 @@ def right_shift(block, step):
 
 def generate_key(base_key, iter):  # key in byte form
     permuted = apply_permutation(base_key, PC[0])
-    print "K_PC1", log(permuted, 6)
+    #print "K_PC1", log(permuted, 6)
     C, D = split_block(permuted)
-    print "C", log(C, 6)
-    print "D", log(D, 6)
+    #print "C", log(C, 6)
+    #print "D", log(D, 6)
     shift = KEY_SHIFT[iter]
     shifted = unite(left_shift(C, shift), left_shift(D, shift))
-    print "Ks", log(shifted, 6)
+    print "CD", iter+1, log(shifted, 6)
     final = apply_permutation(shifted, PC[1])
-    print "K_PC2", log(final, 6)
+    #print "KS", iter+1, log(final, 6)
     return final
 
 
@@ -199,10 +198,11 @@ def unite(left_block, right_block):
 
 
 def f(right_block, key, iter):
+    print "\n >>> round", iter+1, "\n"
     permuted = apply_permutation(right_block, E)
     print "E", len(permuted), log(permuted, 6)
     key_48bit = generate_key(key, iter)
-    print "KS", len(key_48bit), log(key_48bit, 6)
+    print "KS",iter+1, len(key_48bit), log(key_48bit, 6)
     assert len(permuted) == len(key_48bit)
     xored = xor(permuted, key_48bit)
     print "E ^ KS", len(xored), log(xored, 6)
@@ -249,7 +249,7 @@ key = [1, 1, 1, 1, 0, 1, 1, 0,
        0, 1, 1, 1, 1, 0, 1, 1, ]
 
 t = 0x0123456789ABCDEF  # "01234567"
-k = 0x133457799BBCDFF1
+k = 0x3b3898371520f75e # 0x133457799BBCDFF1
 
 
 def DES(block, key):
@@ -259,12 +259,14 @@ def DES(block, key):
     permuted = init(block)
     print "permuted", len(permuted), log(permuted)
     L, R = split_block(permuted)
-    print "split", len(L), len(R), log(L), "\t", log(R)
+    print "L", 0, len(L), log(L)
+    print "R", 0, len(R), log(R)
     for i in range(16):
         Rf = f(R, key, i)
-        print "Rf", i, log(Rf)
+        print "Rf", i+1, log(Rf)
         L, R = R, xor(Rf, L)
-        print "L, R", len(L), len(R), log(L), "\t", log(R)
+        print "L", i+1, len(L), log(L)
+        print "R", i+1, len(R), log(R)
     united = unite(L, R)
     print "united", len(united), log(united)
     result = final(united)
