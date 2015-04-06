@@ -212,9 +212,9 @@ key = [1, 1, 1, 1, 0, 1, 1, 0,
 def DES(block, key):
     permuted = init(block)
     print("permuted", permuted)
-    split = split_block(permuted)
-    print("split", len(split[0]), len(split[1]), split)
-    fresult = f(split[1], key, 1)
+    L, R = split_block(permuted)
+    print("split", len(L), len(R), L, R)
+    fresult = f(R, key, 1)
     print("fresult", fresult)
 
 
