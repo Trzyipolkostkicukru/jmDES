@@ -152,19 +152,23 @@ def right_shift(block, step):
     return left_shift(block, -step)
 
 
-def generate_key(base_key, iter):  # key in byte form
-    permuted = apply_permutation(base_key, PC[0])
+def generate_keys(base_key):  # key in byte form
+    KP = apply_permutation(base_key, PC[0])
     #print "K_PC1", log(permuted, 6)
-    C, D = split_block(permuted)
-    #print "C", log(C, 6)
-    #print "D", log(D, 6)
-    shift = KEY_SHIFT[iter]
-    shifted = unite(left_shift(C, shift), left_shift(D, shift))
-    print "CD", iter+1, log(shifted, 6)
-    final = apply_permutation(shifted, PC[1])
-    #print "KS", iter+1, log(final, 6)
-    return final
-
+    C, D = split_block(KP)
+    keys = []
+    for i in range(16):
+        shift = KEY_SHIFT[i]
+        C = left_shift(C, shift)
+        D = left_shift(D, shift)
+        print "C", i+1, log(C, 6)
+        print "D", i+1, log(D, 6)
+        CD = unite(C, D)
+        print "CD", i+1, log(CD, 6)
+        K = apply_permutation(CD, PC[1])
+        print "KS", i+1, log(K, 6)
+        keys.append(K)
+    return keys
 
 def dec2bin(decimal, width=4):
     return [int(d) for d in bin(decimal)[2:].zfill(width)]
@@ -197,11 +201,11 @@ def unite(left_block, right_block):
     return left_block + right_block
 
 
-def f(right_block, key, iter):
+def f(right_block, keys, iter):
     print "\n >>> round", iter+1, "\n"
     permuted = apply_permutation(right_block, E)
     print "E", len(permuted), log(permuted, 6)
-    key_48bit = generate_key(key, iter)
+    key_48bit = keys[iter]
     print "KS",iter+1, len(key_48bit), log(key_48bit, 6)
     assert len(permuted) == len(key_48bit)
     xored = xor(permuted, key_48bit)
@@ -257,12 +261,15 @@ def DES(block, key):
     print "key", len(key), log(key)
 
     permuted = init(block)
+
+    keys = generate_keys(key)
+
     print "permuted", len(permuted), log(permuted)
     L, R = split_block(permuted)
     print "L", 0, len(L), log(L)
     print "R", 0, len(R), log(R)
     for i in range(16):
-        Rf = f(R, key, i)
+        Rf = f(R, keys, i)
         print "Rf", i+1, log(Rf)
         L, R = R, xor(Rf, L)
         print "L", i+1, len(L), log(L)
