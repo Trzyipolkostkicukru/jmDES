@@ -161,12 +161,12 @@ def generate_keys(base_key):  # key in byte form
         shift = KEY_SHIFT[i]
         C = left_shift(C, shift)
         D = left_shift(D, shift)
-        print "C", i+1, log(C, 6)
-        print "D", i+1, log(D, 6)
+       # print "C", i+1, log(C, 6)
+       # print "D", i+1, log(D, 6)
         CD = unite(C, D)
-        print "CD", i+1, log(CD, 6)
+        print "CD[%s]: " % str(i+1), log(CD, 7)
         K = apply_permutation(CD, PC[1])
-        print "KS", i+1, log(K, 6)
+        print "KS[%s]: " % str(i+1), log(K, 6)
         keys.append(K)
     return keys
 
@@ -182,14 +182,14 @@ def get_sbox_coordinates(six_byte_chunk):
     row_bin = [six_byte_chunk[0]] + [six_byte_chunk[-1]]
     column_bin = six_byte_chunk[1:-1]
 
-    print(row_bin, column_bin)
+  #  print(row_bin, column_bin)
     return bin2dec(row_bin), bin2dec(column_bin)
 
 
 def apply_sbox(chunk, sbox):
     row, col = get_sbox_coordinates(chunk)
     number = sbox[row * 16 + col]
-    print "(", row, ",", col, ") ->", number
+   # print "(", row, ",", col, ") ->", number
     return dec2bin(number)
 
 
@@ -201,17 +201,17 @@ def unite(left_block, right_block):
     return left_block + right_block
 
 
-def f(right_block, keys, iter):
+def f(right_block, key, iter):
     print "\n >>> round", iter+1, "\n"
     permuted = apply_permutation(right_block, E)
     print "E", len(permuted), log(permuted, 6)
-    key_48bit = keys[iter]
-    print "KS",iter+1, len(key_48bit), log(key_48bit, 6)
-    assert len(permuted) == len(key_48bit)
-    xored = xor(permuted, key_48bit)
+
+    print "KS", iter+1, len(key), log(key, 6)
+    assert len(permuted) == len(key)
+    xored = xor(permuted, key)
     print "E ^ KS", len(xored), log(xored, 6)
     six_byte_chunks = [xored[i:i + 6] for i in range(0, len(xored), 6)]
-    print "six_byte_chunks ", log(six_byte_chunks)
+  #  print "six_byte_chunks ", log(six_byte_chunks)
     sbox_out = [apply_sbox(chunk, sbox) for chunk, sbox in zip(six_byte_chunks, S)]
     sbox_out = reduce(lambda c1, c2: c1 + c2, sbox_out)
     print "Sbox", len(sbox_out), log(sbox_out, 4)
@@ -227,7 +227,7 @@ def string2bin(text):
 
 
 def bin2hex(bin_list):
-    return hex(bin2dec(bin_list))
+    return hex(bin2dec(bin_list))[:-1]  # without L
 
 
 def final(byte_block):
@@ -252,29 +252,36 @@ key = [1, 1, 1, 1, 0, 1, 1, 0,
        1, 0, 0, 0, 1, 0, 1, 0,
        0, 1, 1, 1, 1, 0, 1, 1, ]
 
-t = 0x0123456789ABCDEF  # "01234567"
-k = 0x3b3898371520f75e # 0x133457799BBCDFF1
+# t = 0x0123456789ABCDEF  # "01234567"
 
 
-def DES(block, key):
+def encode_des(block, key):
     print "block", len(block), log(block)
     print "key", len(key), log(key)
-
-    permuted = init(block)
-
     keys = generate_keys(key)
+    return bin2hex(DES(block, keys))
 
+
+def decode_des(block, key):
+    print "block", len(block), log(block)
+    print "key", len(key), log(key)
+    keys = generate_keys(key)[::-1]
+    return bin2hex(DES(block, keys))
+
+
+def DES(block, keys):
+    permuted = init(block)
     print "permuted", len(permuted), log(permuted)
     L, R = split_block(permuted)
     print "L", 0, len(L), log(L)
     print "R", 0, len(R), log(R)
     for i in range(16):
-        Rf = f(R, keys, i)
+        Rf = f(R, keys[i], i)
         print "Rf", i+1, log(Rf)
         L, R = R, xor(Rf, L)
         print "L", i+1, len(L), log(L)
         print "R", i+1, len(R), log(R)
-    united = unite(L, R)
+    united = unite(R, L)
     print "united", len(united), log(united)
     result = final(united)
     print "result", len(result), log(result)
@@ -283,14 +290,18 @@ def DES(block, key):
 
 # DES(test, key)
 
-r = DES(dec2bin(t, 64), dec2bin(k, 64))
 
-print len(r), bin2hex(r)
+t = 0xBABC1AD1AD1A0000 # 0xaa39b9777efc3c14
+k = 0x1234567887654321 # 0x3b3898371520f75e
 
-# print len(string2bin(t)), string2bin(t)
-# print len(dec2bin(k, 64)), dec2bin(k, 64)
+e = encode_des(dec2bin(t, 64), dec2bin(k, 64))
+d = decode_des(dec2bin(int(e, 16), 64), dec2bin(k, 64))
 
-print left_shift([1, 1, 1, 0, 0, 0], 1)
+print k
+print hex(t)
+print e
+print d
+
 
 
 
