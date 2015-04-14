@@ -288,40 +288,14 @@ def DES(block, keys):
     return result
 
 
-# DES(test, key)
+if __name__ == "__main__":
+    t = 0xBABC1AD1AD1A0000 # 0xaa39b9777efc3c14
+    k = 0x1234567887654321 # 0x3b3898371520f75e
 
+    e = encode_des(dec2bin(t, 64), dec2bin(k, 64))
+    d = decode_des(dec2bin(int(e, 16), 64), dec2bin(k, 64))
 
-t = 0xBABC1AD1AD1A0000 # 0xaa39b9777efc3c14
-k = 0x1234567887654321 # 0x3b3898371520f75e
-
-e = encode_des(dec2bin(t, 64), dec2bin(k, 64))
-d = decode_des(dec2bin(int(e, 16), 64), dec2bin(k, 64))
-
-print k
-print hex(t)
-print e
-print d
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    print "k == ", k
+    print "t == ", hex(t)
+    print "e == ", e
+    print "d == ", d
